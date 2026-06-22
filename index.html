@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Maze Operasi Campuran - Jalur Acak Rahasia</title>
+<style>
+*{box-sizing:border-box}
+html,body{width:100%;overflow-x:hidden}
+body{margin:0;min-height:100vh;min-height:100dvh;font-family:'Trebuchet MS',Arial,sans-serif;background:radial-gradient(circle at top,#334155,#0f172a 65%);color:white;display:flex;align-items:flex-start;justify-content:center;padding:clamp(8px,2.5vw,18px);touch-action:manipulation}
+.wrap{width:min(1080px,100%)}
+.header{text-align:center;margin-bottom:10px}.header h1{margin:0;font-size:clamp(22px,7vw,34px);color:#facc15;text-shadow:0 4px 16px #000}.header p{margin:6px auto 0;color:#cbd5e1;font-size:clamp(12px,3.5vw,15px);max-width:760px;line-height:1.35}.panel{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}.badge,.btn{background:#fff;color:#0f172a;border-radius:999px;padding:clamp(7px,2.3vw,10px) clamp(10px,3vw,16px);font-weight:900;box-shadow:0 8px 20px #0005;border:0;font-size:clamp(12px,3.4vw,15px);line-height:1.2}.btn{cursor:pointer;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;min-height:42px}.btn:hover{transform:translateY(-1px)}
+.board{width:100%;background:linear-gradient(145deg,#f8fafc,#dbeafe);border:clamp(3px,1.3vw,6px) solid #38bdf8;border-radius:clamp(14px,5vw,26px);padding:clamp(8px,3vw,22px);box-shadow:0 25px 70px #0008;overflow:hidden}svg{display:block;width:100%;height:auto;max-height:72vh;max-height:72dvh}.path-shadow{stroke:#1e293b;stroke-width:12;stroke-linecap:round;opacity:.18}.path{stroke:#64748b;stroke-width:7;stroke-linecap:round}.path.open{stroke:#22c55e}.door{cursor:pointer;-webkit-tap-highlight-color:transparent}.door rect{fill:#fff7ed;stroke:#f97316;stroke-width:3;rx:8;filter:drop-shadow(0 3px 2px #0003)}.door text{font-size:17px;font-weight:900;fill:#7c2d12;text-anchor:middle;dominant-baseline:middle;pointer-events:none}.door:hover rect{fill:#fed7aa}.door.open rect{fill:#22c55e;stroke:#15803d}.door.open text{fill:white}.room rect{fill:white;stroke:#1d4ed8;stroke-width:4;rx:18;filter:drop-shadow(0 7px 5px #0003)}.room text{fill:#0f172a;font-weight:900;text-anchor:middle;dominant-baseline:middle}.room.active rect{fill:#fef3c7;stroke:#f59e0b;stroke-width:6}.room.active text{fill:#92400e}.room.finish rect{fill:#dcfce7;stroke:#16a34a}.room.finish text{fill:#14532d}.room.dead rect{stroke:#ef4444}.hint{text-align:center;color:#dbeafe;font-size:clamp(11px,3.2vw,14px);margin-top:8px;line-height:1.35}.modal{position:fixed;inset:0;background:#020617aa;backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:14px;z-index:10}.modal.show{display:flex}.box{width:min(390px,92vw);background:white;color:#111827;border-radius:24px;text-align:center;padding:clamp(18px,5vw,26px);box-shadow:0 25px 70px #0009;animation:pop .22s ease}.box .emoji{font-size:clamp(46px,14vw,62px)}.box h2{margin:10px 0 6px;font-size:clamp(21px,6vw,26px)}.box p{margin:0 0 16px;color:#475569;line-height:1.45;font-size:clamp(13px,3.8vw,16px)}.box button{border:0;border-radius:14px;padding:13px 20px;font-weight:900;color:white;background:#2563eb;cursor:pointer;width:100%;font-size:16px;min-height:46px}@keyframes pop{from{transform:scale(.75);opacity:.4}to{transform:scale(1);opacity:1}}.ok h2{color:#16a34a}.bad h2{color:#dc2626}.win h2{color:#ca8a04}.new h2{color:#2563eb}
+@media (max-width:600px){
+  .panel{display:grid;grid-template-columns:1fr 1fr;align-items:stretch}
+  .panel .badge,.panel .btn{text-align:center;display:flex;align-items:center;justify-content:center}
+  .panel .btn{grid-column:1 / -1;width:100%}
+  .board{margin-top:4px}
+  svg{max-height:62vh;max-height:62dvh}
+}
+@media (max-width:380px){.panel{grid-template-columns:1fr}.header p{display:none}svg{max-height:58vh;max-height:58dvh}}
+@media (orientation:landscape) and (max-height:520px){.header{display:none}.panel{margin:4px 0}.badge,.btn{font-size:12px;padding:6px 10px;min-height:34px}.board{padding:6px}svg{max-height:78vh;max-height:78dvh}.hint{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header"><h1>🧮 Maze Operasi Campuran</h1><p>Klik angka jawaban pada jalur. Rute benar dibuat acak setiap labirin baru, jadi jalur tidak bisa ditebak. Setiap soal berisi perkalian, pembagian, dan penjumlahan.</p></div>
+  <div class="panel">
+    <div class="badge">Skor: <span id="score">0</span> ⭐</div>
+    <div class="badge">⏱️ Waktu: <span id="timer">00:00</span></div>
+    <div class="badge">🏅 Best Time: <span id="bestTime">--:--</span></div>
+    <div class="badge">Langkah: <span id="steps">0</span></div>
+    <button class="btn" onclick="newLabyrinth()">🔄 Labirin Baru</button>
+  </div>
+  <div class="board"><svg id="svg" viewBox="0 0 900 720" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <div class="hint">Pop up benar/salah tertutup otomatis. Timer mulai setelah tombol Lanjut ditekan. Pilih satu pintu dengan jawaban yang benar. Rute benar disembunyikan dan berubah acak setiap permainan. Jika salah, skor berkurang 5 dan pintu tetap terkunci.</div>
+</div>
+<div class="modal" id="modal"><div class="box" id="modalBox"><div class="emoji" id="emoji"></div><h2 id="title"></h2><p id="msg"></p><button onclick="closeModal()">Lanjut</button></div></div>
+<script>
+const baseRooms=[
+{id:'A',x:70,y:40,name:'Start'}, {id:'B',x:290,y:40}, {id:'C',x:510,y:40}, {id:'D',x:730,y:40},
+{id:'E',x:70,y:185}, {id:'F',x:290,y:185}, {id:'G',x:510,y:185}, {id:'H',x:730,y:185},
+{id:'I',x:70,y:330}, {id:'J',x:290,y:330}, {id:'K',x:510,y:330}, {id:'L',x:730,y:330},
+{id:'M',x:70,y:475}, {id:'N',x:290,y:475}, {id:'O',x:510,y:475}, {id:'P',x:730,y:475},
+{id:'Q',x:70,y:620}, {id:'R',x:290,y:620}, {id:'S',x:510,y:620}, {id:'T',x:730,y:620,finish:true}
+];
+let rooms=[];
+const W=160,H=100; let current='A',score=0,steps=0,mazeNo=1;
+let startTime=0, timerInterval=null, modalTimeout=null, finished=false, timerRunning=false, startAfterModal=false;
+const treasureEmojis=['💰','💎','👑','🏆','🪙','🎁','✨','🔮','🧿','⭐','🥇','💍'];
+let currentTreasure='💰';
+const BEST_KEY='mazeOperasiCampuranBestTime';
+function door(a,b,dead=false){return {a,b,dead,open:false}}
+let doors=[];
+const doorTemplate=[
+ ['A','B'],['A','E'],['A','F',true],['B','C'],['B','F'],['C','D'],['C','G'],['C','F',true],['C','H',true],['D','H'],
+ ['E','F'],['E','I'],['F','G'],['F','J'],['F','K',true],['F','I',true],['G','H'],['G','K'],['H','L'],['I','J'],['I','M'],['I','N',true],
+ ['J','K'],['J','N'],['K','L'],['K','O'],['K','P',true],['L','P'],['M','N'],['M','Q'],['N','O'],['N','R'],['N','S',true],['O','P'],['O','S'],['P','T'],['Q','R'],['R','S'],['S','T']
+];
+// Rute benar dibuat ACAK setiap permainan baru.
+// Jadi pemain tidak bisa menebak jalur dari bentuk labirin atau urutan pintu.
+let goldenPath=[];
+let goldenNext={};
+function buildGraph(){
+ const graph={};
+ baseRooms.forEach(r=>graph[r.id]=[]);
+ doorTemplate.forEach(d=>{
+   graph[d[0]].push(d[1]);
+   graph[d[1]].push(d[0]);
+ });
+ return graph;
+}
+function shuffle(arr){
+ for(let i=arr.length-1;i>0;i--){
+   const j=Math.floor(Math.random()*(i+1));
+   [arr[i],arr[j]]=[arr[j],arr[i]];
+ }
+ return arr;
+}
+function makeSecretRoute(){
+ const graph=buildGraph();
+ let best=null;
+ for(let attempt=0;attempt<300;attempt++){
+   const visited=new Set(['A']);
+   const path=['A'];
+   function dfs(node){
+     if(node==='T') return path.length>=7;
+     let nexts=shuffle([...graph[node]]);
+     for(const nx of nexts){
+       if(visited.has(nx)) continue;
+       visited.add(nx); path.push(nx);
+       if(dfs(nx)) return true;
+       path.pop(); visited.delete(nx);
+     }
+     return false;
+   }
+   if(dfs('A')){
+     best=[...path];
+     if(best.length>=9) break;
+   }
+ }
+ goldenPath=best || ['A','B','C','D','H','L','P','T'];
+ goldenNext={};
+ for(let i=0;i<goldenPath.length-1;i++) goldenNext[goldenPath[i]]=goldenPath[i+1];
+}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function makeWrong(correct){
+ let x=correct;
+ while(x===correct || x<0){
+   x=correct+rand(-12,12);
+ }
+ return x;
+}
+function makeUniqueWrong(correct, used){
+ let x=correct;
+ let guard=0;
+ while(x===correct || x<0 || used.has(String(x))){
+   x=correct+rand(-18,18);
+   guard++;
+   if(guard>80) x=rand(1,150);
+ }
+ used.add(String(x));
+ return x;
+}
+function generateMixedQuestion(){
+ // Setiap soal WAJIB memuat 3 operasi berbeda: perkalian (×), pembagian (÷), dan penjumlahan (+).
+ // Angka dibuat agar pembagian selalu menghasilkan bilangan bulat, sehingga jawaban pintu pasti tepat.
+ const type=rand(0,5);
+ let a,b,c,d,e,ans,q;
+ switch(type){
+   case 0:
+     // (a×b)÷c + d
+     c=rand(2,6); a=c*rand(2,8); b=rand(2,9); d=rand(3,25);
+     ans=(a*b)/c+d;
+     q=`(${a}×${b})÷${c}+${d}`;
+     break;
+   case 1:
+     // a + (b×c)÷d
+     d=rand(2,6); b=d*rand(2,7); c=rand(2,9); a=rand(5,30);
+     ans=a+(b*c)/d;
+     q=`${a}+(${b}×${c})÷${d}`;
+     break;
+   case 2:
+     // (a÷b)×c + d
+     b=rand(2,6); a=b*rand(3,12); c=rand(2,8); d=rand(2,20);
+     ans=(a/b)*c+d;
+     q=`(${a}÷${b})×${c}+${d}`;
+     break;
+   case 3:
+     // d + a÷b × c
+     b=rand(2,5); a=b*rand(4,12); c=rand(2,7); d=rand(4,22);
+     ans=d+(a/b)*c;
+     q=`${d}+${a}÷${b}×${c}`;
+     break;
+   case 4:
+     // (a+b) + (c×d)÷e
+     e=rand(2,5); c=e*rand(2,7); d=rand(2,8); a=rand(2,15); b=rand(2,15);
+     ans=(a+b)+(c*d)/e;
+     q=`(${a}+${b})+(${c}×${d})÷${e}`;
+     break;
+   default:
+     // a×b + c÷d
+     d=rand(2,6); c=d*rand(2,12); a=rand(2,9); b=rand(2,9);
+     ans=a*b+c/d;
+     q=`${a}×${b}+${c}÷${d}`;
+ }
+ return {q:q, ans:Math.round(ans)};
+}
+function chooseTreasure(){
+ currentTreasure=treasureEmojis[Math.floor(Math.random()*treasureEmojis.length)];
+}
+function generateQuestions(){rooms=baseRooms.map(r=>{let nr={...r};if(r.finish){nr.q='END';nr.ans=null}else{let item=generateMixedQuestion();nr.q=item.q;nr.ans=item.ans}return nr});}
+function resetDoors(){
+ makeSecretRoute();
+ doors=doorTemplate.map(d=>door(d[0],d[1],!!d[2]));
+ assignDoorLabels();
+}
+function assignDoorLabels(){
+ // Setiap pintu menyimpan label berdasarkan posisi pemain.
+ // Untuk setiap kotak aktif: semua pintu punya angka berbeda, dan hanya pintu goldenPath yang benar.
+ doors.forEach(d=>{ d.labels={}; });
+ rooms.forEach(r=>{
+   if(r.finish) return;
+   const linked=doors.filter(d=>d.a===r.id || d.b===r.id);
+   const used=new Set();
+   const nextCorrect=goldenNext[r.id];
+   linked.forEach(d=>{
+     const other=(d.a===r.id)?d.b:d.a;
+     if(nextCorrect && other===nextCorrect){
+       d.labels[r.id]=r.ans;
+       used.add(String(r.ans));
+     }
+   });
+   linked.forEach(d=>{
+     if(d.labels[r.id]!==undefined) return;
+     d.labels[r.id]=makeUniqueWrong(r.ans, used);
+   });
+ });
+ // Label cadangan untuk sisi finish supaya tidak muncul undefined saat pemain sudah menang.
+ doors.forEach(d=>{
+   if(d.labels[d.a]===undefined) d.labels[d.a]='✓';
+   if(d.labels[d.b]===undefined) d.labels[d.b]='✓';
+ });
+}
+function room(id){return rooms.find(r=>r.id===id)}
+function labelForDoor(d){
+  if(d.open) return '✓';
+  // Jika pintu berada di dekat posisi pemain, tampilkan angka sesuai soal pada kotak aktif.
+  if(d.a===current || d.b===current) return d.labels[current];
+  // Untuk pintu lain, tampilkan angka dari salah satu sisi sebagai tampilan peta.
+  return d.labels[d.a];
+}
+function formatTime(ms){
+ let total=Math.floor(ms/1000), m=String(Math.floor(total/60)).padStart(2,'0'), s=String(total%60).padStart(2,'0');
+ return m+':'+s;
+}
+function updateTimer(){
+ if(timerRunning && !finished) document.getElementById('timer').textContent=formatTime(Date.now()-startTime);
+}
+function loadBestTime(){
+ let best=localStorage.getItem(BEST_KEY);
+ document.getElementById('bestTime').textContent=best?formatTime(Number(best)):'--:--';
+}
+function resetTimer(){
+ clearInterval(timerInterval);
+ startTime=0; finished=false; timerRunning=false;
+ document.getElementById('timer').textContent='00:00';
+}
+function startTimer(){
+ clearInterval(timerInterval);
+ startTime=Date.now(); finished=false; timerRunning=true;
+ document.getElementById('timer').textContent='00:00';
+ timerInterval=setInterval(updateTimer,1000);
+}
+function stopTimerAndSaveBest(){
+ if(finished) return timerRunning ? Date.now()-startTime : 0;
+ finished=true; clearInterval(timerInterval); timerRunning=false;
+ let finalTime=startTime ? Date.now()-startTime : 0;
+ document.getElementById('timer').textContent=formatTime(finalTime);
+ let best=localStorage.getItem(BEST_KEY);
+ if(!best || finalTime<Number(best)){
+   localStorage.setItem(BEST_KEY,String(finalTime));
+   loadBestTime();
+ }
+ return finalTime;
+}
+function connectorPoints(a,b){
+ let ax=a.x+W/2, ay=a.y+H/2, bx=b.x+W/2, by=b.y+H/2;
+ let dx=bx-ax, dy=by-ay;
+ let scaleA=Math.max(Math.abs(dx)/(W/2), Math.abs(dy)/(H/2));
+ let scaleB=Math.max(Math.abs(dx)/(W/2), Math.abs(dy)/(H/2));
+ return {
+   x1: ax + dx/scaleA,
+   y1: ay + dy/scaleA,
+   x2: bx - dx/scaleB,
+   y2: by - dy/scaleB
+ };
+}
+function draw(){const svg=document.getElementById('svg');svg.innerHTML='';
+ // Gambar bayangan jalur agar semua penghubung terlihat jelas
+ doors.forEach(d=>{let a=room(d.a),b=room(d.b);let p=connectorPoints(a,b);svg.appendChild(el('line',{x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2,class:'path-shadow'}))});
+ // Gambar jalur utama dari tepi kotak ke tepi kotak, bukan dari tengah kotak
+ doors.forEach(d=>{let a=room(d.a),b=room(d.b);let p=connectorPoints(a,b);svg.appendChild(el('line',{x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2,class:'path '+(d.open?'open':'')}))});
+ doors.forEach((d,i)=>{let a=room(d.a),b=room(d.b);let p=connectorPoints(a,b);let mx=(p.x1+p.x2)/2,my=(p.y1+p.y2)/2;let g=el('g',{class:'door '+(d.open?'open':''),onclick:`move(${i})`});g.appendChild(el('rect',{x:mx-28,y:my-17,width:56,height:34}));let t=el('text',{x:mx,y:my});t.textContent=labelForDoor(d);g.appendChild(t);svg.appendChild(g)});
+ rooms.forEach(r=>{let cls='room '+(r.id===current?'active ':'')+(r.finish?'finish ':'');let g=el('g',{class:cls});g.appendChild(el('rect',{x:r.x,y:r.y,width:W,height:H}));let soal=r.finish?currentTreasure+' END':(r.id==='A'?'Start ':'')+r.q;let fontSize=18;if(soal.length>10) fontSize=16;if(soal.length>15) fontSize=14;if(soal.length>20) fontSize=12;if(soal.length>25) fontSize=10;let t=el('text',{x:r.x+W/2,y:r.y+H/2,style:`font-size:${fontSize}px`});if(soal.length>18){let pos=Math.floor(soal.length/2);let baris1=el('tspan',{x:r.x+W/2,dy:-8});baris1.textContent=soal.substring(0,pos);let baris2=el('tspan',{x:r.x+W/2,dy:18});baris2.textContent=soal.substring(pos);t.appendChild(baris1);t.appendChild(baris2);}else{t.textContent=soal;}g.appendChild(t);svg.appendChild(g)});
+ document.getElementById('score').textContent=score;document.getElementById('steps').textContent=steps;loadBestTime();}
+function move(i){
+ let d=doors[i];
+ if(d.a!==current && d.b!==current) return;
+ let active=room(current);
+ let next=(d.a===current)?d.b:d.a;
+
+ // Pintu hijau boleh dilewati untuk maju atau kembali ke jalur sebelumnya.
+ if(d.open){
+   current=next;
+   steps++;
+   draw();
+   checkWin();
+   return;
+ }
+ if(active.finish) return;
+
+ const selectedAnswer = Number(d.labels[current]);
+ const correctAnswer = Number(active.ans);
+
+ if(selectedAnswer === correctAnswer && goldenNext[current]===next){
+   d.open=true;
+   current=next;
+   score+=10;
+   steps++;
+   draw();
+   show('ok','✅','Jawaban Benar!','Pintu terbuka. Kamu boleh lanjut ke jalur berikutnya.', true);
+   checkWin();
+ } else {
+   score = Math.max(0, score - 5);
+   document.getElementById('score').textContent=score;
+   show('bad','❌','Jawaban Salah!','Skor berkurang 5 poin. Pintu tetap terkunci. Coba pilih jalur lain.', true);
+ }
+}
+function newLabyrinth(){mazeNo++;current='A';score=0;steps=0;chooseTreasure();generateQuestions();resetDoors();loadBestTime();resetTimer();draw();startAfterModal=true;show('new',currentTreasure,'Labirin Baru!','Harta karun permainan ini adalah '+currentTreasure+'. Semua soal, angka pintu, dan rute benar sudah berubah secara acak. Setiap pintu memiliki jawaban berbeda, hanya satu yang benar. Tekan tombol Lanjut untuk mulai menghitung waktu.', false);}
+function isDeadEnd(id){if(id==='T')return false;let links=doors.filter(d=>(d.a===id||d.b===id)&&!d.dead);return links.length===1&&id!==current&&id!=='A'}
+function checkWin(){if(room(current).finish){let finalTime=stopTimerAndSaveBest();show('win',currentTreasure,'Harta Karun Ditemukan!','Selamat! Kamu mendapatkan harta karun '+currentTreasure+'. Waktu: '+formatTime(finalTime)+'. Skor akhir: '+score+'. Best Time tersimpan otomatis di browser.', false);}}
+function show(type,emoji,title,msg,autoClose=true){
+ let m=document.getElementById('modal'),b=document.getElementById('modalBox');
+ clearTimeout(modalTimeout);
+ b.className='box '+type;
+ document.getElementById('emoji').textContent=emoji;
+ document.getElementById('title').textContent=title;
+ document.getElementById('msg').textContent=msg;
+ m.classList.add('show');
+ if(autoClose){
+   modalTimeout=setTimeout(closeModal,1200);
+ }
+}
+function closeModal(){
+ clearTimeout(modalTimeout);
+ document.getElementById('modal').classList.remove('show');
+ if(startAfterModal){
+   startAfterModal=false;
+   startTimer();
+ }
+}
+function el(tag,attrs){let e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(let k in attrs)e.setAttribute(k,attrs[k]);return e}
+chooseTreasure();generateQuestions();resetDoors();loadBestTime();resetTimer();draw();startAfterModal=true;show('new',currentTreasure,'Siap Bermain?','Harta karun permainan ini adalah '+currentTreasure+'. Rute benar dibuat acak dan tersembunyi. Setiap pintu memiliki jawaban berbeda, hanya satu yang benar. Tekan tombol Lanjut untuk memulai permainan dan menghitung waktu.', false);
+</script>
+</body>
+</html>
