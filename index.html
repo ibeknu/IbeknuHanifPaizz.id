@@ -20,11 +20,27 @@ body{margin:0;min-height:100vh;min-height:100dvh;font-family:'Trebuchet MS',Aria
 }
 @media (max-width:380px){.panel{grid-template-columns:1fr}.header p{display:none}svg{max-height:58vh;max-height:58dvh}}
 @media (orientation:landscape) and (max-height:520px){.header{display:none}.panel{margin:4px 0}.badge,.btn{font-size:12px;padding:6px 10px;min-height:34px}.board{padding:6px}svg{max-height:78vh;max-height:78dvh}.hint{display:none}}
+.title-row{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.logo{
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="header"><h1>🧮 Maze Operasi Campuran</h1><p>Klik angka jawaban pada jalur. Rute benar dibuat acak setiap labirin baru, jadi jalur tidak bisa ditebak. Setiap soal berisi perkalian, pembagian, dan penjumlahan.</p></div>
+  <div class="header">
+    <div class="title-row">
+      <img src="logo.png" alt="Logo" class="logo">
+    </div>
+    <h1>🧮 Maze Operasi Campuran</h1><p>Klik angka jawaban pada jalur. Rute benar dibuat acak setiap labirin baru, jadi jalur tidak bisa ditebak. Setiap soal berisi perkalian, pembagian, dan penjumlahan.</p></div>
   <div class="panel">
     <div class="badge">Skor: <span id="score">0</span> ⭐</div>
     <div class="badge">⏱️ Waktu: <span id="timer">00:00</span></div>
